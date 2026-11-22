@@ -1,123 +1,141 @@
 # dsh-drop-caret
+
 > **本仓库是 fork**：上游为 [Vithrive/dsh-drop-caret](https://github.com/Vithrive/dsh-drop-caret)（仓库停在 `v0.2.0`），本 fork 先同步了 npm 上 `0.2.3` 的源码，再在其上修复，遵循 MIT 协议；上游作者与版权归原项目贡献者所有（见 [NOTICE](NOTICE) 与 [LICENSE](LICENSE)）。
 >
 > 本 fork 由 **ZSCaiGou** 维护（<https://github.com/ZSCaiGou/dsh-drop-caret>）。**包名必须保持 `dsh-drop-caret`**：VS Code 扩展按包名自动安装/校验配套插件。
 
-
-> 把文件/文件夹从系统文件管理器或 VS Code 资源管理器拖进 DeepSeek Harness 对话输入框，并在**拖放点对应的精确光标位置**插入文件引用。
+把文件 / 文件夹从系统文件管理器或 VS Code 资源管理器拖进 DeepSeek Harness 的对话输入框，插入为引用芯片（显示 `@文件名`，发送时解析成路径交给模型）。
 
 ## ✨ 特性
 
-- **精确光标定位**：拖放点自动映射到输入框光标位置，无论拖到哪里，引用就插到哪里
-- **文件夹递归展开**：拖拽文件夹时，自动递归列出所有文件并逐一插入引用
-- **多来源支持**：
-  - ✅ Windows 资源管理器 / macOS Finder
-  - ✅ VS Code 资源管理器（本地文件/文件夹）
-- **会话隔离存储**：上传的文件按 session 隔离存储到 `~/.dsh-drop/session-<id>/`，agent 可直接读取
-- **安全机制**：文件名消毒、大小上限（24 MiB）、sha256 前缀去重命名
+- **落点插入**：拖放点映射到输入框的插入位置。草稿是单行且不含引用芯片时精确落点；其余情况追加到末尾，避免插错位置。
+- **可连续插入**（本 fork 修复）：一次拖入多个文件、或反复拖入，引用逐个累加，不再「只进第一个」。
+- **文件夹按名引用**：拖入文件夹只插入「@文件夹名」本身，不展开子文件（0.2.3 起的行为）。
+- **右键加入引用**（需配合本 fork 的 VS Code 扩展）：资源管理器里右键文件/文件夹，路径直接进输入框，支持多选。
+- **多来源支持**：Windows 资源管理器 / macOS Finder；VS Code 资源管理器（直接引用源路径）。
+- **会话隔离存储**：系统拖入的文件落盘到 `<会话工作目录>/.dsh-drop/<sessionId>/`，agent 可直接读取。
+- **安全机制**：文件名消毒、单文件上限 24 MiB、sha256 前缀去重命名。
 
 ## 📦 安装
 
+本 fork **没有发布到 npm**，所以不要用 `dsh plugin --profile web add dsh-drop-caret`（那会装到上游 0.2.3）。手工接入：
+
 ```bash
-dsh plugin --profile web add dsh-drop-caret
+git clone https://github.com/ZSCaiGou/dsh-drop-caret.git
+cd dsh-drop-caret
+
+# 放进 profile 的 vendor 目录（与本扩展管理自己三个内置插件的方式一致）
+mkdir -p ~/.dsh/profiles/web/vendor
+rm -rf ~/.dsh/profiles/web/vendor/dsh-drop-caret
+cp -r . ~/.dsh/profiles/web/vendor/dsh-drop-caret
+rm -rf ~/.dsh/profiles/web/vendor/dsh-drop-caret/.git
 ```
 
-安装后重启 `dsh web` 即可使用。
+在 `~/.dsh/profiles/web/package.json` 的 `dependencies` 里写：
+
+```json
+"dsh-drop-caret": "file:./vendor/dsh-drop-caret"
+```
+
+（`dsh.profile.bundles` 数组里仍保持 `"dsh-drop-caret"`。）然后：
+
+```bash
+cd ~/.dsh/profiles/web
+pnpm install
+```
+
+重启 `dsh web` 生效。版本号 `0.2.4` 高于扩展要求的最低版本 `0.2.3`，所以扩展的自动检查不会把 npm 上游版重新装回来。
 
 ## 🎯 使用方法
 
-1. 打开 DeepSeek Harness Web GUI 的对话输入框
-2. 从文件管理器或 VS Code 侧边栏拖拽文件/文件夹到输入框
-3. 在拖放位置自动插入文件引用（格式：`[file://...]`）
+1. 打开 DSH Web GUI 的对话输入框；
+2. 从文件管理器或 VS Code 资源管理器把文件 / 文件夹拖进输入框（**在 VS Code 里需要按住 Shift**，见「已知限制」）；
+3. 输入框里出现 `@文件名` 引用芯片。
 
-### 文件夹拖拽
+### 文件夹
 
-- **系统文件管理器**：递归收集文件夹中的所有文件并上传
-- **VS Code 资源管理器**：调用 Host API 列出文件夹内容，插入本地路径引用（不复制文件）
+- **VS Code 资源管理器**：只插入「@文件夹名」本身，不展开子文件；
+- **系统文件管理器**：浏览器拿不到真实路径，改为上传文件夹内的文件并逐个插入副本路径。
+
+### 右键加入引用（需配合本 fork 的 VS Code 扩展）
+
+资源管理器里右键文件或文件夹 →「DeepSeek Harness: 加入对话框引用」，支持多选。
 
 ## 🖱️ 与 VS Code 扩展联动：发送选中内容到对话框
 
-安装 [DeepSeek Harness for VS Code](https://github.com/Vithrive/Deepseek-Harness-for-VS-Code) 扩展后，可以更快捷地把代码上下文送进对话：
+配合 [本 fork 的 VS Code 扩展](https://github.com/ZSCaiGou/Deepseek-Harness-for-VS-Code) 使用：
 
 1. 在 VS Code 中**框选住代码块 / 文字块**；
-2. **右键**，点击 **「DeepSeek Harness: 发送选中内容到对话框」**：
+2. **右键** →「DeepSeek Harness: 发送选中内容到对话框」：
 
-   ![右键菜单：发送选中内容到对话框](media/send-selection-menu.png)
+   ![右键菜单：发送选中内容到对话框](https://raw.githubusercontent.com/ZSCaiGou/Deepseek-Harness-for-VS-Code/main/media/send-selection-menu.png)
 
-3. 该脚本对应代码块所在行数的链接（`路径:起始行-结束行`）就会被发送到对话框，插入在当前光标位置：
+3. 一段 `路径:起始行-结束行` 的引用会插入到对话框当前光标处：
 
-   ![发送结果出现在 DSH 对话框中](media/send-selection-result.png)
+   ![发送结果出现在 DSH 对话框中](https://raw.githubusercontent.com/ZSCaiGou/Deepseek-Harness-for-VS-Code/main/media/send-selection-result.png)
 
-4. 在 DSH 里直接发送消息即可，模型可通过引用精确定位到代码块所在文件与行号。
-
-> 该功能由 VS Code 扩展经 webview 桥接转发给本插件处理；扩展会自动安装并管理本插件（≥0.2.1），无需手动配置。
+4. 在 DSH 里直接发送即可，模型可通过引用精确定位到文件与行号。
 
 ## 🔧 工作原理
 
 ### Client 端（浏览器）
 
-- 监听 `dragover` / `drop` 事件
-- 使用 `document.caretRangeFromPoint(x, y)` 映射拖放点 → 光标偏移量
-- 通过 `updateValue` waterfall 在精确位置插入引用
+- 在 **window 捕获阶段**监听 `dragover` / `drop`，抢在 DSH 内置图片拖放处理器之前，避免非图片文件触发「仅支持 PNG/JPG…」提示；
+- 用 `document.caretRangeFromPoint(x, y)` 推断落点，并把握手选区移到该处；
+- 通过会话自身暴露的 `input.actions.captureInsertion()` 取「当前选区 + 当前 `draftRev`」的插入 span，再调 `input.insertReference()`（**不要自己按草稿长度算偏移**：草稿是 clipboard 投影，引用芯片会展开成完整路径，而编辑区认的是 detect 坐标，芯片只占 1 个占位符）。
 
 ### Host 端（Node.js）
 
-- 提供 `/api/dsh-drop` 端点接收文件上传
-- 提供 `/api/dsh-drop-list-dir` 端点递归列出文件夹内容
-- 文件存储于 `~/.dsh-drop/session-<id>/`，会话隔离
+- `/api/dsh-drop`：接收上传并落盘到 `<会话 cwd>/.dsh-drop/<sessionId>/`；
+- `/api/dsh-drop-list-dir`：判断给定路径是文件还是目录（文件夹只返回类型，不展开）。
 
 ### 数据协议识别
 
-| 拖拽来源 | dataTransfer 内容 | 处理方式 |
-|---------|------------------|---------|
-| 系统文件管理器 | `Files` | 上传 → 插入存储路径 |
-| VS Code 资源管理器 | `text/uri-list` | 解析 `file://` → 本地路径 → 递归列出（文件夹）→ 插入路径 |
-| VS Code 资源管理器（兜底） | `application/vnd.code.tree` | 递归抽取 resource URI → 插入路径 |
+| 拖拽来源 | `dataTransfer` 内容 | 处理方式 |
+|---|---|---|
+| VS Code 资源管理器 | `text/uri-list` / `application/vnd.code.tree` | 解析成本地路径，判断文件或目录后插入 |
+| 系统文件管理器 | `Files` | 浏览器拿不到真实路径，上传副本后插入副本路径 |
+
+> 判定顺序是先 URI 类型、再 `Files`：VS Code 拖拽同时带两者，先判 URI 才能拿到源文件路径而不是副本。
 
 ## 📝 已知限制
 
-- **远程 VS Code**（Remote-SSH 的 `vscode-remote://` URI）暂不支持，需要 VS Code 扩展侧配合映射远程路径
-- 文件夹拖拽的递归深度无限制（大型项目文件夹可能插入大量引用）
+- **VS Code 里必须按住 Shift**：VS Code 会把拖到 webview 上的 drop 先拦下来（编辑器区会提示「按住 Shift 放进…」），不按修饰键时事件根本到不了页面；
+- **远程 VS Code**（Remote-SSH 的 `vscode-remote://` URI）暂不支持，需要扩展侧配合映射远程路径；
+- **落点精度**：草稿非空、多行或结构复杂时退回追加到末尾；
+- **系统文件管理器拖入是副本**：引用指向 `.dsh-drop/` 下的快照，不是源文件。
 
 ## 🛠️ 开发
 
 ```bash
-# 克隆仓库
-git clone https://github.com/Vithrive/dsh-drop-caret.git
+git clone https://github.com/ZSCaiGou/dsh-drop-caret.git
 cd dsh-drop-caret
 
 # 构建客户端 bundle
 node build.mjs
 
-# 本地测试（symlink 到 web profile）
+# 本地测试：用 vendor + file: 依赖接入（见「安装」），或临时
 cd ~/.dsh/profiles/web
 npm install --save-dev /path/to/dsh-drop-caret
-
-# 发布
-npm publish
 ```
 
-## 安全
+发布前注意：包名 `dsh-drop-caret` 与上游冲突，不要直接 `npm publish`；如需分发请换 scope 或走 `file:` / tarball。
 
-```sh
-dsh plugin --profile web add dsh-drop-caret
-# 重启 dsh web
-```
+## 🔐 安全
 
-## 📄 安全
-
-- 上传走 host 的 HTTP 路由，存储目录按会话隔离
-- 仅 POST；文件名/会话 id 均做消毒
-- 不注入任何全局状态，插件卸载时清理 drop 监听
+- 上传走 host 的 HTTP 路由，存储目录按会话隔离；
+- 仅 POST；文件名、会话 id 均做消毒；
+- 不注入全局状态，卸载时清理 drop 监听。
 
 ## 📄 许可证
 
-MIT © [Vithrive](https://github.com/Vithrive)
+MIT © dsh-drop-caret contributors（上游）；本 fork 的修改 © [ZSCaiGou](https://github.com/ZSCaiGou)。详见 [LICENSE](LICENSE) 与 [NOTICE](NOTICE)。
 
 ## 🔗 相关项目
 
 - [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)
-- [DeepSeek Harness for VS Code](https://github.com/Vithrive/Deepseek-Harness-for-VS-Code)
+- 上游 VS Code 扩展：[Vithrive/Deepseek-Harness-for-VS-Code](https://github.com/Vithrive/Deepseek-Harness-for-VS-Code)
+- 本 fork 的 VS Code 扩展：[ZSCaiGou/Deepseek-Harness-for-VS-Code](https://github.com/ZSCaiGou/Deepseek-Harness-for-VS-Code)
 
 ## Fork 改动（相对 npm 0.2.3）
 
