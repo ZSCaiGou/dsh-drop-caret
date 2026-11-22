@@ -31,6 +31,23 @@ dsh plugin --profile web add dsh-drop-caret
 - **系统文件管理器**：递归收集文件夹中的所有文件并上传
 - **VS Code 资源管理器**：调用 Host API 列出文件夹内容，插入本地路径引用（不复制文件）
 
+## 🖱️ 与 VS Code 扩展联动：发送选中内容到对话框
+
+安装 [DeepSeek Harness for VS Code](https://github.com/Vithrive/Deepseek-Harness-for-VS-Code) 扩展后，可以更快捷地把代码上下文送进对话：
+
+1. 在 VS Code 中**框选住代码块 / 文字块**；
+2. **右键**，点击 **「DeepSeek Harness: 发送选中内容到对话框」**：
+
+   ![右键菜单：发送选中内容到对话框](media/send-selection-menu.png)
+
+3. 该脚本对应代码块所在行数的链接（`路径:起始行-结束行`）就会被发送到对话框，插入在当前光标位置：
+
+   ![发送结果出现在 DSH 对话框中](media/send-selection-result.png)
+
+4. 在 DSH 里直接发送消息即可，模型可通过引用精确定位到代码块所在文件与行号。
+
+> 该功能由 VS Code 扩展经 webview 桥接转发给本插件处理；扩展会自动安装并管理本插件（≥0.2.1），无需手动配置。
+
 ## 🔧 工作原理
 
 ### Client 端（浏览器）
