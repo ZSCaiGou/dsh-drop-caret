@@ -1,4 +1,8 @@
 # dsh-drop-caret
+> **本仓库是 fork**：上游为 [Vithrive/dsh-drop-caret](https://github.com/Vithrive/dsh-drop-caret)（仓库停在 `v0.2.0`），本 fork 先同步了 npm 上 `0.2.3` 的源码，再在其上修复，遵循 MIT 协议；上游作者与版权归原项目贡献者所有（见 [NOTICE](NOTICE) 与 [LICENSE](LICENSE)）。
+>
+> 本 fork 由 **ZSCaiGou** 维护（<https://github.com/ZSCaiGou/dsh-drop-caret>）。**包名必须保持 `dsh-drop-caret`**：VS Code 扩展按包名自动安装/校验配套插件。
+
 
 > 把文件/文件夹从系统文件管理器或 VS Code 资源管理器拖进 DeepSeek Harness 对话输入框，并在**拖放点对应的精确光标位置**插入文件引用。
 
@@ -114,3 +118,11 @@ MIT © [Vithrive](https://github.com/Vithrive)
 
 - [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)
 - [DeepSeek Harness for VS Code](https://github.com/Vithrive/Deepseek-Harness-for-VS-Code)
+
+## Fork 改动（相对 npm 0.2.3）
+
+- **修「只能插入一个引用」**：插入 span 原先用 `state.draft.length`（clipboard 投影长度）当偏移，而编辑区认的是 detect 坐标（引用芯片只占 1 个占位符）。草稿一旦有芯片，后续 span 全部越界被拒且静默失败。改为调用 `input.actions.captureInsertion()` 取会话自己构造的 span（坐标与 `draftRev` 都对）。
+- **修「总是插到末尾」**：新版 composer 是 contenteditable 草稿编辑器，旧的 `querySelector('textarea')` 定位失效。改为按拖放点移动选区，再取快照插入。
+- **新增 `paths` 批量路径引用**：接收 VS Code 扩展转发来的文件/文件夹路径（右键「加入对话框引用」）。
+- 所有失败路径改为打印 `[dsh-drop-caret] ...`，不再静默。
+- 版本 `0.2.3` → `0.2.4`（高于扩展要求的最低版本，避免被 `ensureDshPlugins()` 拉回上游版本）。

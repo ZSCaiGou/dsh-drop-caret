@@ -27,6 +27,11 @@
     "LICENSE"
   ],
   "license": "MIT",
+  "author": { "name": "ZSCaiGou", "url": "https://github.com/ZSCaiGou" },
+  "contributors": [{ "name": "Vithrive 及上游贡献者", "url": "https://github.com/Vithrive/dsh-drop-caret" }],
+  "repository": { "type": "git", "url": "https://github.com/ZSCaiGou/dsh-drop-caret.git" },
+  "homepage": "https://github.com/ZSCaiGou/dsh-drop-caret#readme",
+  "bugs": { "url": "https://github.com/ZSCaiGou/dsh-drop-caret/issues" },
   "dsh": {
     "client": {
       "inject": [

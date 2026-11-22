@@ -1,0 +1,17 @@
+dsh-drop-caret —— 本仓库是 fork
+================================
+
+上游项目 / Upstream
+  dsh-drop-caret（GitHub 仓库停在 v0.2.0；npm 上发布到 0.2.3，源码未入库）
+  https://github.com/Vithrive/dsh-drop-caret
+  许可证: MIT（原文见仓库根目录 LICENSE）
+  版权: Copyright (c) 2026 dsh-drop-caret contributors
+
+本 fork / This fork
+  仓库: https://github.com/ZSCaiGou/dsh-drop-caret
+  维护者: ZSCaiGou
+  基线: 上游 v0.2.0 历史 + 同步 npm 0.2.3 源码（commit e416fc8）
+  改动: 修多文件插入与落点定位、新增 paths 批量路径引用、版本 0.2.4
+
+依据 MIT 协议，上游的版权声明与许可声明（LICENSE）在本仓库中原样保留。
+本文件仅用于补充来源说明，不修改许可证条款。
